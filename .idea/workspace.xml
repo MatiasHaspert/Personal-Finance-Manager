@@ -4,7 +4,23 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="09db5bbc-cbb6-4d43-9baa-21ee7196c3d6" name="Changes" comment="commit" />
+    <list default="true" id="09db5bbc-cbb6-4d43-9baa-21ee7196c3d6" name="Changes" comment="commit">
+      <change beforePath="$PROJECT_DIR$/.idea/compiler.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/compiler.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/personal_finance_manager/Controllers/PresupuestoController.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/example/personal_finance_manager/Controllers/PresupuestoController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/personal_finance_manager/Controllers/TransaccionController.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/example/personal_finance_manager/Controllers/TransaccionController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/personal_finance_manager/Exceptions/GlobalExceptionHandler.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/example/personal_finance_manager/Exceptions/GlobalExceptionHandler.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/personal_finance_manager/Models/TipoCategoria.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/example/personal_finance_manager/Models/TipoCategoria.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/personal_finance_manager/Repositories/PresupuestoRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/example/personal_finance_manager/Repositories/PresupuestoRepository.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/personal_finance_manager/Repositories/TransaccionRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/example/personal_finance_manager/Repositories/TransaccionRepository.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/personal_finance_manager/Security/SecurityConfig.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/example/personal_finance_manager/Security/SecurityConfig.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/personal_finance_manager/Services/AuthServiceImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/example/personal_finance_manager/Services/AuthServiceImpl.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/personal_finance_manager/Services/PresupuestoService.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/example/personal_finance_manager/Services/PresupuestoService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/personal_finance_manager/Services/PresupuestoServiceImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/example/personal_finance_manager/Services/PresupuestoServiceImpl.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/personal_finance_manager/Services/TransaccionService.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/example/personal_finance_manager/Services/TransaccionService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/personal_finance_manager/Services/TransaccionServiceImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/example/personal_finance_manager/Services/TransaccionServiceImpl.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/personal_finance_manager/Services/UsuarioServiceImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/example/personal_finance_manager/Services/UsuarioServiceImpl.java" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -58,9 +74,10 @@
     "RunOnceActivity.ShowReadmeOnStart": "true",
     "com.intellij.testIntegration.createTest.CreateTestDialog.defaultLibrary": "JUnit5",
     "com.intellij.testIntegration.createTest.CreateTestDialog.defaultLibrarySuperClass.JUnit5": "",
+    "git-widget-placeholder": "main",
     "kotlin-language-version-configured": "true",
     "last_opened_file_path": "C:/Users/haspe/OneDrive/Escritorio/personal-finance-manager/personal-finance-manager",
-    "settings.editor.selected.configurable": "org.jetbrains.plugins.github.ui.GithubSettingsConfigurable"
+    "settings.editor.selected.configurable": "reference.projectsettings.compiler.annotationProcessors"
   }
 }]]></component>
   <component name="RecentsManager">

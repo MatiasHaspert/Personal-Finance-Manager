@@ -15,6 +15,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -42,28 +43,33 @@ public class TransaccionServiceImpl implements TransaccionService{
     }
 
     public TransaccionResponseDTO crearTransaccion(TransaccionRequestDTO transaccionRequestDTO, Usuario usuario) {
-        transaccionRequestDTO.setUsuario(usuario);
-        return aTransaccionResponseDTO(transaccionRepository.save(aTransaccionEntity(transaccionRequestDTO)));
+        Transaccion transaccion = aTransaccionEntity(transaccionRequestDTO, usuario);
+        return aTransaccionResponseDTO(transaccionRepository.save(transaccion));
     }
 
     public TransaccionResponseDTO actualizarTransaccion(Long id, TransaccionRequestDTO transaccionRequestDTO, Usuario usuario) {
-        if(!transaccionRepository.existsById(id)){
-            throw new NotFoundException("Transaccion no encontrada");
+        Transaccion transaccion = transaccionRepository.findById(id).orElseThrow(() -> new NotFoundException("Transacción no encontrada"));
+
+        if(!transaccion.getUsuario().getId().equals(usuario.getId())){
+            throw new AccessDeniedException("No tenes permiso para esta operación");
         }
         transaccionRequestDTO.setId(id);
-        transaccionRequestDTO.setUsuario(usuario);
-        return aTransaccionResponseDTO(transaccionRepository.save(aTransaccionEntity(transaccionRequestDTO)));
+
+        return aTransaccionResponseDTO(transaccionRepository.save(aTransaccionEntity(transaccionRequestDTO, usuario)));
     }
 
     public void eliminarTransaccion(Long id, Usuario usuario) {
-        if(!transaccionRepository.existsById(id)){
-            throw new NotFoundException("Transaccion no encontrada");
+        Transaccion transaccion = transaccionRepository.findById(id).orElseThrow(() -> new NotFoundException("Transacción no encontrada"));
+
+        if(!transaccion.getUsuario().getId().equals(usuario.getId())){
+            throw new AccessDeniedException("No tenes permiso para esta operación");
         }
+
         transaccionRepository.deleteTransaccionByIdAndUsuario(id,usuario);
     }
 
-    public List<TransaccionResponseDTO> getTransacionesPorTipo(Long id, TipoTransaccion tipoTransaccion, LocalDate fecha) {
-        List<Transaccion> transacciones = transaccionRepository.findTransaccionesByUsuarioAndTipoAndFecha(id, tipoTransaccion.name(), fecha.getYear(), fecha.getMonthValue());
+    public List<TransaccionResponseDTO> getTransaccionesPorTipo(Usuario usuario, TipoTransaccion tipoTransaccion, LocalDate fecha) {
+        List<Transaccion> transacciones = transaccionRepository.findTransaccionesByUsuarioAndTipoTransaccionAndFecha(usuario, tipoTransaccion, fecha);
 
         return transacciones.stream().map(this::aTransaccionResponseDTO).toList();
     }
@@ -83,16 +89,16 @@ public class TransaccionServiceImpl implements TransaccionService{
     }
 
     public BigDecimal getMontoTotalMensualPorTipo(Long id, TipoTransaccion tipoTransaccion, LocalDate fecha) {
-        return transaccionRepository.sumMontoTransaccionesByUsuarioAndTipoAndFecha(id, tipoTransaccion.name(), fecha.getYear(), fecha.getMonthValue());
+        return transaccionRepository.sumMontoTransaccionesByUsuarioAndTipoAndFecha(id, tipoTransaccion, fecha.getYear(), fecha.getMonthValue());
     }
 
-    public Transaccion aTransaccionEntity(TransaccionRequestDTO transaccionRequestDTO) {
+    public Transaccion aTransaccionEntity(TransaccionRequestDTO transaccionRequestDTO, Usuario usuario) {
         Transaccion transaccion = new Transaccion();
 
         transaccion.setId(transaccionRequestDTO.getId());
-        transaccion.setUsuario(transaccionRequestDTO.getUsuario());
+        transaccion.setUsuario(usuario);
         transaccion.setTipoTransaccion(transaccionRequestDTO.getTipoTransaccion());
-        transaccion.setFecha(transaccionRequestDTO.getFecha());
+        transaccion.setFecha(transaccionRequestDTO.getFecha().withDayOfMonth(1)); // Asegurar primer día del mes
         transaccion.setDescripcion(transaccionRequestDTO.getDescripcion());
         transaccion.setMonto(transaccionRequestDTO.getMonto());
         transaccion.setCategoria(transaccionRequestDTO.getCategoria());

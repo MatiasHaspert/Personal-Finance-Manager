@@ -22,7 +22,7 @@ public interface TransaccionService {
 
     void eliminarTransaccion(Long id, Usuario usuario);
 
-    List<TransaccionResponseDTO> getTransacionesPorTipo(Long id, TipoTransaccion tipoTransaccion, LocalDate fecha);
+    List<TransaccionResponseDTO> getTransaccionesPorTipo(Usuario usuario, TipoTransaccion tipoTransaccion, LocalDate fecha);
 
     BigDecimal getSaldoMensual(Long id, LocalDate fecha);
 
@@ -30,7 +30,7 @@ public interface TransaccionService {
 
     List<CategoriaMontoDTO> getCategoriaMontoTotalPorTipo(Long id, TipoTransaccion tipo, LocalDate fecha);
 
-    Transaccion aTransaccionEntity(TransaccionRequestDTO transaccionRequestDTO);
+    Transaccion aTransaccionEntity(TransaccionRequestDTO transaccionRequestDTO, Usuario usuario);
 
     TransaccionResponseDTO aTransaccionResponseDTO(Transaccion transaccion);
 }

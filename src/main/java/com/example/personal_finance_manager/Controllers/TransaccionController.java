@@ -6,10 +6,8 @@ import com.example.personal_finance_manager.DTOs.TransaccionRequestDTO;
 import com.example.personal_finance_manager.DTOs.TransaccionResponseDTO;
 import com.example.personal_finance_manager.Models.TipoTransaccion;
 import com.example.personal_finance_manager.Models.Usuario;
-import com.example.personal_finance_manager.Security.UserDetailsImpl;
 import com.example.personal_finance_manager.Services.AuthService;
 import com.example.personal_finance_manager.Services.TransaccionService;
-import com.example.personal_finance_manager.Services.UsuarioService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -17,7 +15,6 @@ import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -101,7 +98,7 @@ public class TransaccionController {
             @RequestParam TipoTransaccion tipo
     ) {
         Usuario usuario = authService.obtenerUsuarioAutenticado(authentication);
-        return ResponseEntity.ok(transaccionService.getTransacionesPorTipo(usuario.getId(), tipo, fecha));
+        return ResponseEntity.ok(transaccionService.getTransaccionesPorTipo(usuario, tipo, fecha));
     }
 
 

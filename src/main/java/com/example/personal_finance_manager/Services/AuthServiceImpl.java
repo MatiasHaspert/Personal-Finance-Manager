@@ -9,12 +9,14 @@ import com.example.personal_finance_manager.Models.Usuario;
 import com.example.personal_finance_manager.Security.JwtUtils;
 import com.example.personal_finance_manager.Security.UserDetailsImpl;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Primary;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.stereotype.Service;
 
+@Primary
 @Service
 public class AuthServiceImpl implements AuthService{
 

@@ -13,31 +13,31 @@ import java.util.List;
 
 public interface PresupuestoService {
 
-    PresupuestoResponseDTO getPresupuestoMensual(Long id, LocalDate fecha);
+    PresupuestoResponseDTO getPresupuestoMensual(Usuario usuario, LocalDate fecha);
 
     PresupuestoResponseDTO crearPresupuesto(Usuario usuario, PresupuestoRequestDTO presupuestoRequestDTO);
 
-    List<PresupuestoResponseDTO> getPresupuestosPorCategoria(Long id, LocalDate fecha);
+    List<PresupuestoResponseDTO> getPresupuestosPorCategoria(Usuario usuario, LocalDate fecha);
 
     PresupuestoResponseDTO actualizarPresupuesto(Usuario usuario, Long presupuestoId, PresupuestoRequestDTO presupuesto, LocalDate fecha);
 
-    boolean isExistsPresupuestoMensual(Long id, LocalDate fecha);
+    boolean isExistsPresupuestoMensualPorUsuarioId(Usuario usuario, LocalDate fecha);
 
-    boolean isExistsPresupuestoCategoria(Long id, LocalDate fecha, TipoCategoria categoria);
+    boolean isExistsPresupuestoCategoriaPorUsuarioId(Usuario usuario, LocalDate fecha, TipoCategoria categoria);
 
-    boolean isExistsPresupuestoMensualPorID(Long presupuestoId, Long id, LocalDate fecha);
+    boolean isExistsPresupuestoMensualPorIDyUsuarioId(Long presupuestoId, Usuario usuario, LocalDate fecha);
 
-    boolean isExistsPresupuestoDeCategoriaPorID(Long presupuestoID, Long id, LocalDate fecha);
+    boolean isExistsPresupuestoDeCategoriaPorIDyUsuarioId(Long presupuestoID, Usuario usuario, LocalDate fecha);
 
     PresupuestoResponseDTO procesarPresupuestoMensual(Presupuesto presupuesto, Usuario usuario);
 
     PresupuestoResponseDTO procesarPresupuestoCategoria(Presupuesto presupuesto, Usuario usuario);
 
-    void eliminarPresupuesto(Long presupuestoId, Long usuarioId, LocalDate fecha);
+    void eliminarPresupuesto(Long presupuestoId, Usuario usuario, LocalDate fecha);
 
     Presupuesto aPresupuestoEntity(Usuario usuario, PresupuestoRequestDTO presupuesto);
 
-    boolean actualizarPresupuestoSiEsNecesario(Long usuarioId, Presupuesto nuevoPresupuesto);
+    boolean actualizarPresupuestoSiEsNecesario(Usuario usuario, Presupuesto nuevoPresupuesto);
 
     PresupuestoResponseDTO aPresupuestoResumenDTO(Presupuesto presupuesto, BigDecimal montoGastado, String mensaje);
 

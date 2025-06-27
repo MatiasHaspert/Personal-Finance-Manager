@@ -28,8 +28,8 @@ import java.util.List;
 @Service
 public class PresupuestoServiceImpl implements PresupuestoService{
 
-    PresupuestoRepository presupuestoRepository;
-    TransaccionRepository transaccionRepository;
+    private PresupuestoRepository presupuestoRepository;
+    private TransaccionRepository transaccionRepository;
 
     @Autowired
     public PresupuestoServiceImpl(PresupuestoRepository presupuestoRepository, TransaccionRepository transaccionRepository){
@@ -41,10 +41,10 @@ public class PresupuestoServiceImpl implements PresupuestoService{
         Presupuesto presupuesto = aPresupuestoEntity(usuario, presupuestoRequestDTO);
 
         if (presupuesto.getCategoria() == null) { // El usuario crea un presupuesto mensual
-            if (isExistsPresupuestoMensual(usuario.getId(), presupuesto.getFecha())) {
+            if (isExistsPresupuestoMensualPorUsuarioId(usuario, presupuesto.getFecha())) {
                 throw new BadRequestException("El presupuesto mensual ya existe");
             }
-        }else if(isExistsPresupuestoCategoria(usuario.getId(), presupuesto.getFecha(), presupuesto.getCategoria())){
+        }else if(isExistsPresupuestoCategoriaPorUsuarioId(usuario, presupuesto.getFecha(), presupuesto.getCategoria())){
                 throw new BadRequestException("El presupuesto para la categoría ya existe");
         }
 
@@ -57,10 +57,10 @@ public class PresupuestoServiceImpl implements PresupuestoService{
         presupuesto.setId(presupuestoId);
 
         if(presupuesto.getCategoria() == null){ // Actualizar presupuesto mensual
-            if(!isExistsPresupuestoMensualPorID(presupuestoId, usuario.getId(), fecha)){
+            if(!isExistsPresupuestoMensualPorIDyUsuarioId(presupuestoId, usuario, fecha)){
                 throw new NotFoundException("Presupuesto mensual no encontrado");
             }
-        }else if(!isExistsPresupuestoDeCategoriaPorID(presupuestoId, usuario.getId(), fecha)){ // Actualizar presupuesto de categoría
+        }else if(!isExistsPresupuestoDeCategoriaPorIDyUsuarioId(presupuestoId, usuario, fecha)){ // Actualizar presupuesto de categoría
                 throw new NotFoundException("Presupuesto no encontrado");
         }
 
@@ -68,22 +68,29 @@ public class PresupuestoServiceImpl implements PresupuestoService{
         return procesarPresupuesto(presupuesto, usuario);
     }
 
-    public PresupuestoResponseDTO getPresupuestoMensual(Long id, LocalDate fecha) {
+    public void eliminarPresupuesto(Long presupuestoId, Usuario usuario, LocalDate fecha) {
+        if(!presupuestoRepository.existsPresupuestoCategoriaByIdAndUsuarioAndFechaAndCategoriaIsNotNull(presupuestoId, usuario, fecha)){
+            throw new NotFoundException("Presupuesto con id " + presupuestoId + "no encontrado.");
+        }
+        presupuestoRepository.deleteByIdAndUsuario(presupuestoId, usuario);
+    }
 
-        if(!isExistsPresupuestoMensual(id, fecha)){
+    public PresupuestoResponseDTO getPresupuestoMensual(Usuario usuario, LocalDate fecha) {
+
+        if(!isExistsPresupuestoMensualPorUsuarioId(usuario, fecha)){
             throw new NotFoundException("Presupuesto mensual no encontrado.");
         }
 
-        Presupuesto presupuesto = presupuestoRepository.findPresupuestoMensualByUsuarioAndFechaAndCategoriaIsNull(id, fecha.getYear(), fecha.getMonthValue());
+        Presupuesto presupuesto = presupuestoRepository.findPresupuestoMensualByUsuarioAndFechaAndCategoriaIsNull(usuario, fecha);
 
-        BigDecimal montoGastado = transaccionRepository.sumMontoTransaccionesByUsuarioAndTipoAndFecha(id, TipoTransaccion.GASTO.name(), fecha.getYear(), fecha.getMonthValue());
+        BigDecimal montoGastado = transaccionRepository.sumMontoTransaccionesByUsuarioAndTipoAndFecha(usuario.getId(), TipoTransaccion.GASTO, fecha.getYear(), fecha.getMonthValue());
 
         return aPresupuestoResumenDTO(presupuesto, montoGastado, null);
     }
 
-    public List<PresupuestoResponseDTO> getPresupuestosPorCategoria(Long id, LocalDate fecha) {
-        List<Presupuesto> presupuestoCategoriaList = presupuestoRepository.findPresupuestosDeCategoriasByUsuarioAndFechaAndCategoriaisNotNull(id, fecha.getYear(), fecha.getMonthValue());
-        List<CategoriaMontoDTO> categoriaMontoDTOList = presupuestoRepository.sumGastosDePresupuestoCategoriaByUsuarioAndFechaAndTipo(id, TipoTransaccion.GASTO.name(), fecha.getYear(), fecha.getMonthValue());
+    public List<PresupuestoResponseDTO> getPresupuestosPorCategoria(Usuario usuario, LocalDate fecha) {
+        List<Presupuesto> presupuestoCategoriaList = presupuestoRepository.findPresupuestosCategoriasByUsuarioAndFechaAndCategoriaIsNotNull(usuario, fecha);
+        List<CategoriaMontoDTO> categoriaMontoDTOList = presupuestoRepository.sumGastosDePresupuestoCategoriaByUsuarioAndFechaAndTipo(usuario.getId(), TipoTransaccion.GASTO.name(), fecha.getYear(), fecha.getMonthValue());
         List<PresupuestoResponseDTO> presupuestoResponseDTOList = new ArrayList<>();
 
         for (Presupuesto p : presupuestoCategoriaList) {
@@ -106,7 +113,7 @@ public class PresupuestoServiceImpl implements PresupuestoService{
         // Elimina un presupuesto de categoría si se quiere actualizar un valor a 0
         if (presupuesto.getCategoria() != null && presupuesto.getMonto().compareTo(BigDecimal.ZERO) == 0) {
             // Lo interpreto como eliminación
-            presupuestoRepository.deleteById(presupuesto.getId());
+            presupuestoRepository.deleteByIdAndUsuario(presupuesto.getId(), usuario);
             return new PresupuestoResponseDTO(null, null, null, null, null, null, null, "El presupuesto fue eliminado porque el monto fue 0");
         }
 
@@ -118,18 +125,56 @@ public class PresupuestoServiceImpl implements PresupuestoService{
         return procesarPresupuestoCategoria(presupuesto, usuario);
     }
 
-    public boolean actualizarPresupuestoSiEsNecesario(Long usuarioId, Presupuesto nuevoPresupuesto){
-        Presupuesto presupuestoMensual = presupuestoRepository.findPresupuestoMensualByUsuarioAndFechaAndCategoriaIsNull(usuarioId, nuevoPresupuesto.getFecha().getYear(), nuevoPresupuesto.getFecha().getMonthValue());
+    public PresupuestoResponseDTO procesarPresupuestoMensual(Presupuesto presupuesto, Usuario usuario){
+        BigDecimal montoGastado;
+        String mensaje = null;
+
+        //Si se busca actualizar el presupuesto mensual con un monto menor a la suma de los presupuestos de categorías, lanzo bad request.
+        BigDecimal montoTotalPresupuestoCategoria = presupuestoRepository.sumMontoTotalPresupuestadoCategoriasByUsuarioAndFecha(usuario.getId(), presupuesto.getFecha().getYear(), presupuesto.getFecha().getMonthValue());
+        if(presupuesto.getMonto().compareTo(montoTotalPresupuestoCategoria) < 0){
+            throw new BadRequestException("El presupuesto total no puede ser inferior a la suma de los presupuestos de las categorías: $" + montoTotalPresupuestoCategoria);
+        }
+
+        // Obtengo monto de los gastos totales del mes
+        montoGastado = transaccionRepository.sumMontoTransaccionesByUsuarioAndTipoAndFecha(usuario.getId(), TipoTransaccion.GASTO, presupuesto.getFecha().getYear(), presupuesto.getFecha().getMonthValue());
+
+        return aPresupuestoResumenDTO(presupuestoRepository.save(presupuesto), montoGastado, mensaje);
+    }
+
+    public PresupuestoResponseDTO procesarPresupuestoCategoria(Presupuesto presupuesto, Usuario usuario){
+        BigDecimal montoGastado;
+        String mensaje = null;
+        /*
+        Presupuesto de categoría
+        Si el usuario crea/actualiza un monto presupuestado para una categoría y
+        sobrepasa al presupuestado mensual, lo actualizo.
+        */
+        if (actualizarPresupuestoSiEsNecesario(usuario, presupuesto)){
+            mensaje = "El total de los presupuestos por categoría superó el presupuesto mensual, por lo " +
+                    "que este último fue actualizado automáticamente.";
+        }
+
+        // Obtengo el monto de los gastos totales de dicha categoría
+        montoGastado = transaccionRepository.sumMontoTransaccionesByCategoriaAndUsuarioAndTipoAndFecha(usuario.getId(), TipoTransaccion.GASTO, presupuesto.getCategoria(), presupuesto.getFecha().getYear(), presupuesto.getFecha().getMonthValue());
+
+        // El usuario crea un presupuesto de categoría
+        return aPresupuestoResumenDTO(presupuestoRepository.save(presupuesto), montoGastado, mensaje);
+    }
+
+    public boolean actualizarPresupuestoSiEsNecesario(Usuario usuario, Presupuesto nuevoPresupuesto){
+        Presupuesto presupuestoMensual = presupuestoRepository.findPresupuestoMensualByUsuarioAndFechaAndCategoriaIsNull(usuario, nuevoPresupuesto.getFecha());
 
         if (presupuestoMensual == null) {
             throw new BadRequestException("No existe un presupuesto mensual para esta fecha");
         }
 
-        BigDecimal montoTotalPresupuestado = presupuestoRepository.sumMontoTotalPresupuestadoCategoriasByUsuarioAndFecha(usuarioId, nuevoPresupuesto.getFecha().getYear(), nuevoPresupuesto.getFecha().getMonthValue());
+        BigDecimal montoTotalPresupuestado = presupuestoRepository.sumMontoTotalPresupuestadoCategoriasByUsuarioAndFecha(usuario.getId(), nuevoPresupuesto.getFecha().getYear(), nuevoPresupuesto.getFecha().getMonthValue());
 
         if(nuevoPresupuesto.getId() != null){ // Se busca actualizar un presupuesto
-            BigDecimal montoViejoPresupuestado = presupuestoRepository.findMontoPresupuestoCategoriaByUsuarioAndCategoriaAndFecha(usuarioId, nuevoPresupuesto.getCategoria().name(), nuevoPresupuesto.getFecha().getYear(), nuevoPresupuesto.getFecha().getMonthValue());
-
+            BigDecimal montoViejoPresupuestado = presupuestoRepository.findMontoPresupuestoCategoriaByUsuarioAndCategoriaAndFecha(usuario.getId(), nuevoPresupuesto.getCategoria(), nuevoPresupuesto.getFecha().getYear(), nuevoPresupuesto.getFecha().getMonthValue());
+            if(montoViejoPresupuestado == null){
+                montoViejoPresupuestado = BigDecimal.ZERO;
+            }
             // Resto el presupuesto viejo y sumo el nuevo.
             montoTotalPresupuestado = montoTotalPresupuestado.subtract(montoViejoPresupuestado).add(nuevoPresupuesto.getMonto());
         }else{
@@ -147,62 +192,20 @@ public class PresupuestoServiceImpl implements PresupuestoService{
         return seDebeActualizarPresupuestoMensual;
     }
 
-    public void eliminarPresupuesto(Long presupuestoId, Long usuarioId, LocalDate fecha) {
-        if(!presupuestoRepository.existsPresupuestoDeCategoriaIdByIdAndUsuarioAndFecha(presupuestoId, usuarioId, fecha.getYear(), fecha.getMonthValue())){
-            throw new NotFoundException("Presupuesto con id " + presupuestoId + "no encontrado.");
-        }
-        presupuestoRepository.deleteById(presupuestoId);
+    public boolean isExistsPresupuestoMensualPorIDyUsuarioId(Long presupuestoId, Usuario usuario, LocalDate fecha) {
+        return presupuestoRepository.existsPresupuestoMensualIdByIdAndUsuarioAndFechaAndCategoriaIsNull(presupuestoId, usuario, fecha);
     }
 
-    public PresupuestoResponseDTO procesarPresupuestoMensual(Presupuesto presupuesto, Usuario usuario){
-        BigDecimal montoGastado;
-        String mensaje = null;
-
-        //Si se busca actualizar el presupuesto mensual con un monto menor a la suma de los presupuestos de categorías, lanzo bad request.
-        BigDecimal montoTotalPresupuestoCategoria = presupuestoRepository.sumMontoTotalPresupuestadoCategoriasByUsuarioAndFecha(usuario.getId(), presupuesto.getFecha().getYear(), presupuesto.getFecha().getMonthValue());
-        if(presupuesto.getMonto().compareTo(montoTotalPresupuestoCategoria) < 0){
-            throw new BadRequestException("El presupuesto total no puede ser inferior a la suma de los presupuestos de las categorías: $" + montoTotalPresupuestoCategoria);
-        }
-
-        // Obtengo monto de los gastos totales del mes
-        montoGastado = transaccionRepository.sumMontoTransaccionesByUsuarioAndTipoAndFecha(usuario.getId(), TipoTransaccion.GASTO.name(), presupuesto.getFecha().getYear(), presupuesto.getFecha().getMonthValue());
-
-        return aPresupuestoResumenDTO(presupuestoRepository.save(presupuesto), montoGastado, mensaje);
+    public boolean isExistsPresupuestoDeCategoriaPorIDyUsuarioId(Long presupuestoId, Usuario usuario, LocalDate fecha){
+        return presupuestoRepository.existsPresupuestoCategoriaByIdAndUsuarioAndFechaAndCategoriaIsNotNull(presupuestoId, usuario, fecha);
     }
 
-    public PresupuestoResponseDTO procesarPresupuestoCategoria(Presupuesto presupuesto, Usuario usuario){
-        BigDecimal montoGastado;
-        String mensaje = null;
-        /*
-        Presupuesto de categoría
-        Si el usuario crea/actualiza un monto presupuestado para una categoría y
-        sobrepasa al presupuestado mensual, lo actualizo.
-        */
-        if (actualizarPresupuestoSiEsNecesario(usuario.getId(), presupuesto)){
-            mensaje = "El total de los presupuestos por categoría superó el presupuesto mensual, por lo " +
-                    "que este último fue actualizado automáticamente.";
-        }
-
-        // Obtengo el monto de los gastos totales de dicha categoría
-        montoGastado = transaccionRepository.sumMontoTransaccionesByCategoriaAndUsuarioAndTipoAndFecha(usuario.getId(), TipoTransaccion.GASTO.name(), presupuesto.getCategoria().name(), presupuesto.getFecha().getYear(), presupuesto.getFecha().getMonthValue());
-
-        // El usuario crea un presupuesto de categoría
-        return aPresupuestoResumenDTO(presupuestoRepository.save(presupuesto), montoGastado, mensaje);
-    }
-    public boolean isExistsPresupuestoMensualPorID(Long presupuestoId, Long usuarioId, LocalDate fecha) {
-        return presupuestoRepository.existsPresupuestoMensualIdByIdAndUsuarioAndFecha(presupuestoId, usuarioId ,fecha.getYear(), fecha.getMonthValue());
+    public boolean isExistsPresupuestoMensualPorUsuarioId(Usuario usuario, LocalDate fecha) {
+        return presupuestoRepository.existsPresupuestoMensualByUsuarioAndFechaAndCategoriaIsNull(usuario, fecha);
     }
 
-    public boolean isExistsPresupuestoDeCategoriaPorID(Long presupuestoId, Long usuarioId, LocalDate fecha){
-        return presupuestoRepository.existsPresupuestoDeCategoriaIdByIdAndUsuarioAndFecha(presupuestoId, usuarioId, fecha.getYear(), fecha.getMonthValue());
-    }
-
-    public boolean isExistsPresupuestoMensual(Long id, LocalDate fecha) {
-        return presupuestoRepository.existsPresupuestoMensualByUsuarioAndFecha(id, fecha.getYear(), fecha.getMonthValue());
-    }
-
-    public boolean isExistsPresupuestoCategoria(Long id, LocalDate fecha, TipoCategoria categoria){
-        return presupuestoRepository.existsPresupuestoDeCategoriaByUsuarioAndFechaAndCategoria(id, fecha.getYear(), fecha.getMonthValue(), categoria.name());
+    public boolean isExistsPresupuestoCategoriaPorUsuarioId(Usuario usuario, LocalDate fecha, TipoCategoria categoria){
+        return presupuestoRepository.existsPresupuestoDeCategoriaByUsuarioAndFechaAndCategoria(usuario, fecha, categoria);
     }
 
     public Presupuesto aPresupuestoEntity(Usuario usuario, PresupuestoRequestDTO presupuestoRequestDTO){
